@@ -1,0 +1,7 @@
+﻿services:
+  gop:
+    image: gop
+    build:
+      context: .
+      dockerfile: Dockerfile
+
