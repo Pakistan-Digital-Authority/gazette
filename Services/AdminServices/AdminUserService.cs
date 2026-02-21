@@ -252,7 +252,7 @@ public class AdminUserService : IAdminUserService
             var welcomeEmailPath = Path.Combine(folderPath, "Invitation.html");
             
             string mailBody = await File.ReadAllTextAsync(welcomeEmailPath);
-            mailBody = mailBody.Replace("{{invitationLink}}", $"http://localhost:3000/account-creation/accept-invitation?token={newToken.Access}");
+            mailBody = mailBody.Replace("{{invitationLink}}", $"http://localhost:3000/auth/accept-invitation?token={newToken.Access}");
             mailBody = mailBody.Replace("{{token}}", newToken.Access);
             await _emailSender.SendEmailAsync(request.Email, subject, mailBody);
             
@@ -363,7 +363,7 @@ public class AdminUserService : IAdminUserService
             var welcomeEmailPath = Path.Combine(folderPath, "Invitation.html");
             
             string mailBody = await File.ReadAllTextAsync(welcomeEmailPath);
-            mailBody = mailBody.Replace("{{invitationLink}}", $"http://localhost:3000/account-creation/accept-invitation?token={newToken.Access}");
+            mailBody = mailBody.Replace("{{invitationLink}}", $"http://localhost:3000/auth/accept-invitation?token={newToken.Access}");
             mailBody = mailBody.Replace("{{token}}", newToken.Access);
             await _emailSender.SendEmailAsync(user.Email, subject, mailBody);
 

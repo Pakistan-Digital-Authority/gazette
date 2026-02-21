@@ -83,7 +83,7 @@ public class PublicNoticeService : IPublicNoticeService
                 GazettePart = n.GazettePart,
                 Ministry = n.User.Ministry,
                 SroNumber = n.SroNumber,
-                PubslishedDate = n.PublishedDateTime,
+                PublishedDate = n.PublishedDateTime,
                 Tags = n.Tags,
                 PublishedDateTime = n.PublishedDateTime.ToRelativeTime()
             }).ToList();

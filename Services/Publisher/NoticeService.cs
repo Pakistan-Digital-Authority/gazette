@@ -2,9 +2,11 @@
 using gop.Enums;
 using gop.Extensions;
 using gop.Interfaces;
+using gop.Repositories;
 using gop.Repositories.GeneralRepos;
 using gop.Requests;
 using gop.Requests.NoticeRequests;
+using gop.Requests.PublicRequests;
 using gop.Responses;
 using gop.Responses.NoticeResponses;
 using gop.Security.CurrentUser;
@@ -28,6 +30,13 @@ public interface INoticeService
     /// </summary>
     /// <returns>Response with list of draft notices</returns>
     Task<ApiResponse<PagedResult<PublisherNoticeListResponse>>> GetAllDraftsAsync(GetPublisherNoticesListRequest request);
+    
+    /// <summary>
+    /// For search and filters
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    Task<ApiResponse<PagedResult<PublicNoticesListResponse>>> GetSearchQueryResultAsync(PublicNoticesGetListRequest request);
 
     /// <summary>
     /// Get notice by ID
@@ -78,6 +87,8 @@ public class NoticeService : INoticeService
     private readonly IHostEnvironment _environment;
     private readonly IActReferenceRepo _actRepo;
     private readonly ILogsRepo _logsRepo;
+    private readonly IPublicNoticeRepo _pubRepo;
+    private readonly IUserRepo _userRepo;
     private readonly IPublisherNotificationService _notificationService;
 
     /// <summary>
@@ -92,7 +103,9 @@ public class NoticeService : INoticeService
     /// <param name="actRepo"></param>
     /// <param name="logsRepo"></param>
     /// <param name="notificationService"></param>
-    public NoticeService(ICurrentUserProvider currentUser, INoticeRepo repo, IConfiguration configuration, IFileStorageService fileStorage, ISroNumberService sroNumbering, IHostEnvironment environment, IActReferenceRepo actRepo, ILogsRepo logsRepo, IPublisherNotificationService notificationService)
+    /// <param name="pubRepo"></param>
+    /// <param name="userRepo"></param>
+    public NoticeService(ICurrentUserProvider currentUser, INoticeRepo repo, IConfiguration configuration, IFileStorageService fileStorage, ISroNumberService sroNumbering, IHostEnvironment environment, IActReferenceRepo actRepo, ILogsRepo logsRepo, IPublisherNotificationService notificationService, IPublicNoticeRepo pubRepo, IUserRepo userRepo)
     {
         _currentUser = currentUser;
         _repo = repo;
@@ -103,6 +116,8 @@ public class NoticeService : INoticeService
         _actRepo = actRepo;
         _logsRepo = logsRepo;
         _notificationService = notificationService;
+        _pubRepo = pubRepo;
+        _userRepo = userRepo;
     }
 
     /// <summary>
@@ -193,6 +208,60 @@ public class NoticeService : INoticeService
     }
 
     /// <summary>
+    /// To search and filter - notices
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public async Task<ApiResponse<PagedResult<PublicNoticesListResponse>>> GetSearchQueryResultAsync(PublicNoticesGetListRequest request)
+    {
+        var response = new ApiResponse<PagedResult<PublicNoticesListResponse>>();
+        try
+        {
+            var user = _currentUser.GetCurrentUser();
+            var userInfo = await _userRepo.GetByIdAsync(user.Id);
+            if (userInfo is not null)
+            {
+                request.Ministry = userInfo.Ministry;
+            }
+            var notices = await _pubRepo.GetPagedNoticesAsync(request);
+
+            if (!notices.Items.Any())
+            {
+                response.Status = (int)StatusCodeEnum.NotFound;
+                response.Message = "No notices found on the server!";
+                return response;
+            }
+
+            var result = notices.Items.Select(n => new PublicNoticesListResponse
+            {
+                Id = n.Id,
+                Title = n.Title,
+                Content = n.Content,
+                GazettePart = n.GazettePart,
+                Ministry = n.User.Ministry,
+                SroNumber = n.SroNumber,
+                PublishedDate = n.PublishedDateTime,
+                Tags = n.Tags,
+                PublishedDateTime = n.PublishedDateTime.ToRelativeTime()
+            }).ToList();
+            
+            var pagedResponse = new PagedResult<PublicNoticesListResponse>(result, notices.TotalCount, notices.PageNumber, notices.PageSize);
+
+            response.Status = 200;
+            response.Message = "Published notices fetched successfully!";
+            response.Data = pagedResponse;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            response.Status = 500;
+            response.Message = ex.Message;
+            return response;
+        }
+    }
+
+    /// <summary>
     /// Get notice by id
     /// </summary>
     public async Task<ApiResponse<PublisherNoticeResponse>> GetByIdAsync(Guid id)
@@ -216,6 +285,7 @@ public class NoticeService : INoticeService
                 Id = notice.Id,
                 Title = notice.Title,
                 HtmlContent = notice.HtmlContent,
+                Description = notice.Description,
                 Status = notice.Status,
                 PublishedDateTime = notice.PublishedDateTime,
                 EffectiveDate = notice.EffectiveDate,
@@ -235,7 +305,8 @@ public class NoticeService : INoticeService
             dynamic fileResponse = await _fileStorage.GetFileUrlAsync(notice.PdfUrl);
             if (fileResponse.Status == 200)
             {
-                noticeDetail.PdfUrl = fileResponse.Location;
+                // noticeDetail.PdfUrl = fileResponse.Location;
+                noticeDetail.PdfUrl = "https://pdfobject.com/pdf/sample.pdf";
             }
 
             response.Status = 200;
@@ -317,7 +388,7 @@ public class NoticeService : INoticeService
             notice.Year = sroNumber.Year;
             notice.Slug = sroNumber.Slug;
 
-            var fullPath = $"{baseUrl}/notices/{sroNumber.Year}/{sroNumber.Slug}";
+            var fullPath = $"{baseUrl}/publisher/notice/{sroNumber.Slug}";
             notice.PreviewUrl = fullPath;
             
             // uploading file
@@ -338,19 +409,26 @@ public class NoticeService : INoticeService
             notice.Keywords = request.Keywords;
             notice.Tags = request.Tags;
             
+            var created = await _repo.AddAsync(notice);
+            if (!created)
+            {
+                response.Status = 500;
+                response.Message = "Failed to create notice.";
+                return response;
+            }
+            
             if (request.RelatedActs != null && request.RelatedActs.Any())
             {
                 foreach (var relatedAct in request.RelatedActs)
                 {
                     // Check if ActReference with the title exists
-                    var actRef = await _actRepo.FindByTitleAsync(relatedAct.Reference);
-
+                    var actRef = await _actRepo.FindByTitleAsync(relatedAct);
                     if (actRef == null)
                     {
                         // Create new ActReference if not found
                         actRef = new ActReference
                         {
-                            Title = relatedAct.Reference,
+                            Title = relatedAct,
                         };
                         await _actRepo.AddAsync(actRef);
                     }
@@ -361,17 +439,8 @@ public class NoticeService : INoticeService
                         ActId = actRef.Id,
                         NoticeId = notice.Id
                     };
-
                     notice.NoticeActReferences.Add(noticeActReference);
                 }
-            }
-
-            var created = await _repo.AddAsync(notice);
-            if (!created)
-            {
-                response.Status = 500;
-                response.Message = "Failed to create notice.";
-                return response;
             }
 
             #endregion

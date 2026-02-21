@@ -40,7 +40,7 @@ namespace gop.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ActReferences");
+                    b.ToTable("ActReferences", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.Log", b =>
@@ -114,7 +114,7 @@ namespace gop.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Logs");
+                    b.ToTable("Logs", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.LoginHistory", b =>
@@ -160,7 +160,7 @@ namespace gop.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("LoginHistories");
+                    b.ToTable("LoginHistories", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.Notice", b =>
@@ -245,7 +245,7 @@ namespace gop.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notices");
+                    b.ToTable("Notices", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.NoticeActReference", b =>
@@ -269,7 +269,7 @@ namespace gop.Migrations
 
                     b.HasIndex("NoticeId");
 
-                    b.ToTable("NoticeActReferences");
+                    b.ToTable("NoticeActReferences", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.Notification", b =>
@@ -310,7 +310,7 @@ namespace gop.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.SroCounter", b =>
@@ -333,7 +333,7 @@ namespace gop.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SroCounters");
+                    b.ToTable("SroCounters", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.Token", b =>
@@ -375,7 +375,7 @@ namespace gop.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tokens");
+                    b.ToTable("Tokens", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.User", b =>
@@ -435,7 +435,7 @@ namespace gop.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("gop.Data.Entities.LoginHistory", b =>

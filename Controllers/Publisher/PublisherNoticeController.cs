@@ -2,6 +2,7 @@
 using gop.Enums;
 using gop.Requests.AuthRequests;
 using gop.Requests.NoticeRequests;
+using gop.Requests.PublicRequests;
 using gop.Services.Publisher;
 using gop.Validators;
 using Microsoft.AspNetCore.Authorization;
@@ -54,6 +55,20 @@ public class PublisherNoticeController : ControllerBase
     public async Task<IActionResult> GetAllDraftsAsync([FromQuery] GetPublisherNoticesListRequest request)
     {
         var response = await _service.GetAllDraftsAsync(request);
+        return StatusCode(response.Status, response);
+    }
+    
+    /// <summary>
+    /// To search and get all the notices of the publisher type ministry - Only published
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("search")]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
+    [HasPermission(UserRoleEnum.Publisher)]
+    public async Task<IActionResult> GetSearchQueryResultAsync([FromQuery] PublicNoticesGetListRequest request)
+    {
+        var response = await _service.GetSearchQueryResultAsync(request);
         return StatusCode(response.Status, response);
     }
 

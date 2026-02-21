@@ -11,7 +11,7 @@ public class PublicNoticesListResponse
     public string GazettePart { get; set; }
     public string Ministry { get; set; }
     public string SroNumber { get; set; }
-    public DateTime PubslishedDate { get; set; }
+    public DateTime PublishedDate { get; set; }
     public string? Tags { get; set; }
     public string PublishedDateTime { get; set; }
 }

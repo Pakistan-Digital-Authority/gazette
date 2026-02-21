@@ -71,7 +71,8 @@ public class PublicNoticeRepo : IPublicNoticeRepo
 
         if (!string.IsNullOrWhiteSpace(request.GazettePart))
         {
-            query = query.Where(q => q.GazettePart == request.GazettePart);
+            var part = request.GazettePart.Trim();
+            query = query.Where(q => q.GazettePart == part);
         }
         
         if (!string.IsNullOrWhiteSpace(request.Ministry))
@@ -86,8 +87,7 @@ public class PublicNoticeRepo : IPublicNoticeRepo
             
             query = query.Where(q => 
                 q.PublishedDateTime >= fromDate &&
-                q.PublishedDateTime <= toDate &&
-                q.GazettePart == request.GazettePart
+                q.PublishedDateTime <= toDate
             );
         }
 
@@ -115,6 +115,13 @@ public class PublicNoticeRepo : IPublicNoticeRepo
         else
         {
             query = query.OrderByDescending(n => n.PublishedDateTime);
+        }
+        
+        if (request.Tags?.Any() == true)
+        {
+            query = query.Where(q =>
+                request.Tags.Any(tag => q.Tags.Contains(tag))
+            );
         }
 
         return await query.ToPagedResultAsync(request.PageNumber, request.PageSize);

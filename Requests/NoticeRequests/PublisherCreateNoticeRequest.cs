@@ -27,13 +27,5 @@ public class PublisherCreateNoticeRequest
     [Required]
     public DateOnly EffectiveDate { get; set; }
     public NoticeStatusEnum Status { get; set; }
-    public List<RelatedActReferenceRequest>? RelatedActs { get; set; }
-}
-
-/// <summary>
-/// Related Act Reference of notice - Publisher
-/// </summary>
-public class RelatedActReferenceRequest
-{
-    public string Reference { get; set; }
+    public List<string>? RelatedActs { get; set; }
 }

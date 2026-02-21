@@ -16,4 +16,5 @@ public class PublicNoticesGetListRequest : PagedRequest
     public DateOnly? DateFrom { get; set; }
     public DateOnly? DateTo { get; set; }
     public SortByEnum SortBy { get; set; } = SortByEnum.Latest;
+    public ICollection<string>? Tags { get; set; }
 }
